@@ -1,0 +1,1006 @@
+From 157f3fd8ceb0d885ed14980d403d73cd5ed8ff42 Mon Sep 17 00:00:00 2001
+From: CrumblyLiquid <crumblyliquid@gmail.com>
+Date: Wed, 8 Apr 2026 12:03:18 +0200
+Subject: [PATCH] Move to Python 3
+
+---
+ Makefile                                      |   2 +-
+ configure                                     |   5 +-
+ pebble.py                                     |   2 +-
+ scripts/acpi_extract.py                       |   2 +-
+ scripts/acpi_extract_preprocess.py            |   2 +-
+ scripts/analyse-9p-simpletrace.py             |   2 +-
+ scripts/analyze-migration.py                  |   2 +-
+ scripts/ordereddict.py                        | 128 ------------------
+ scripts/png_to_cstruct.py                     |   2 +-
+ scripts/qapi.py                               |  35 +++--
+ scripts/qemu-gdb.py                           |   2 +-
+ scripts/qemugdb/__init__.py                   |   2 +-
+ scripts/qemugdb/aio.py                        |   2 +-
+ scripts/qemugdb/coroutine.py                  |   2 +-
+ scripts/qemugdb/mtree.py                      |   2 +-
+ scripts/qmp/qmp.py                            |   4 +-
+ scripts/simpletrace.py                        |   2 +-
+ scripts/tracetool.py                          |   6 +-
+ scripts/tracetool/__init__.py                 |   2 +-
+ scripts/tracetool/backend/__init__.py         |   2 +-
+ scripts/tracetool/backend/dtrace.py           |   2 +-
+ scripts/tracetool/backend/ftrace.py           |   2 +-
+ scripts/tracetool/backend/simple.py           |   2 +-
+ scripts/tracetool/backend/stderr.py           |   2 +-
+ scripts/tracetool/backend/ust.py              |   2 +-
+ scripts/tracetool/format/__init__.py          |   2 +-
+ scripts/tracetool/format/c.py                 |   2 +-
+ scripts/tracetool/format/d.py                 |   2 +-
+ scripts/tracetool/format/events_c.py          |   2 +-
+ scripts/tracetool/format/events_h.py          |   2 +-
+ scripts/tracetool/format/h.py                 |   2 +-
+ scripts/tracetool/format/simpletrace_stap.py  |   2 +-
+ scripts/tracetool/format/stap.py              |   2 +-
+ scripts/tracetool/format/tcg_h.py             |   2 +-
+ scripts/tracetool/format/tcg_helper_c.py      |   2 +-
+ scripts/tracetool/format/tcg_helper_h.py      |   2 +-
+ .../tracetool/format/tcg_helper_wrapper_h.py  |   2 +-
+ scripts/tracetool/format/ust_events_c.py      |   2 +-
+ scripts/tracetool/format/ust_events_h.py      |   2 +-
+ scripts/tracetool/transform.py                |   2 +-
+ scripts/vmstate-static-checker.py             |   2 +-
+ tests/Makefile                                |   2 +-
+ tests/image-fuzzer/runner.py                  |  56 ++++----
+ tests/qemu-iotests/iotests.py                 |   6 +-
+ tests/qemu-iotests/nbd-fault-injector.py      |   2 +-
+ tests/qemu-iotests/qcow2.py                   |   2 +-
+ tests/qemu-iotests/qed.py                     |   4 +-
+ 47 files changed, 100 insertions(+), 222 deletions(-)
+ delete mode 100644 scripts/ordereddict.py
+
+diff --git a/Makefile b/Makefile
+index ccc8970ed..8f58cc350 100644
+--- a/Makefile
++++ b/Makefile
+@@ -250,7 +250,7 @@ qemu-ga$(EXESUF): QEMU_CFLAGS += -I qga/qapi-generated
+ 
+ gen-out-type = $(subst .,-,$(suffix $@))
+ 
+-qapi-py = $(SRC_PATH)/scripts/qapi.py $(SRC_PATH)/scripts/ordereddict.py
++qapi-py = $(SRC_PATH)/scripts/qapi.py
+ 
+ qga/qapi-generated/qga-qapi-types.c qga/qapi-generated/qga-qapi-types.h :\
+ $(SRC_PATH)/qga/qapi-schema.json $(SRC_PATH)/scripts/qapi-types.py $(qapi-py)
+diff --git a/configure b/configure
+index bf1a2406b..f78a0f892 100755
+--- a/configure
++++ b/configure
+@@ -1186,9 +1186,8 @@ fi
+ 
+ # Note that if the Python conditional here evaluates True we will exit
+ # with status 1 which is a shell 'false' value.
+-if ! $python -c 'import sys; sys.exit(sys.version_info < (2,6) or sys.version_info >= (3,))'; then
+-  error_exit "Cannot use '$python', Python 2.6 or later is required." \
+-      "Note that Python 3 or later is not yet supported." \
++if ! $python -c 'import sys; sys.exit(sys.version_info < (3,))'; then
++  error_exit "Cannot use '$python', Python 3 or later is required." \
+       "Use --python=/path/to/python to specify a supported Python."
+ fi
+ 
+diff --git a/pebble.py b/pebble.py
+index b5760a996..d09606c67 100755
+--- a/pebble.py
++++ b/pebble.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ import os
+ import argparse
+diff --git a/scripts/acpi_extract.py b/scripts/acpi_extract.py
+index 10c1ffb36..0d00f6f37 100755
+--- a/scripts/acpi_extract.py
++++ b/scripts/acpi_extract.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python3
+ # Copyright (C) 2011 Red Hat, Inc., Michael S. Tsirkin <mst@redhat.com>
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff --git a/scripts/acpi_extract_preprocess.py b/scripts/acpi_extract_preprocess.py
+index 69d10d621..5ab1de204 100755
+--- a/scripts/acpi_extract_preprocess.py
++++ b/scripts/acpi_extract_preprocess.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python3
+ # Copyright (C) 2011 Red Hat, Inc., Michael S. Tsirkin <mst@redhat.com>
+ #
+ # This program is free software; you can redistribute it and/or modify
+diff --git a/scripts/analyse-9p-simpletrace.py b/scripts/analyse-9p-simpletrace.py
+index 3c3dee433..2cb684072 100755
+--- a/scripts/analyse-9p-simpletrace.py
++++ b/scripts/analyse-9p-simpletrace.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # Pretty print 9p simpletrace log
+ # Usage: ./analyse-9p-simpletrace <trace-events> <trace-pid>
+ #
+diff --git a/scripts/analyze-migration.py b/scripts/analyze-migration.py
+index 14553876a..bd9282bcc 100755
+--- a/scripts/analyze-migration.py
++++ b/scripts/analyze-migration.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ #
+ #  Migration Stream Analyzer
+ #
+diff --git a/scripts/ordereddict.py b/scripts/ordereddict.py
+deleted file mode 100644
+index 2d1d81370..000000000
+--- a/scripts/ordereddict.py
++++ /dev/null
+@@ -1,128 +0,0 @@
+-# Copyright (c) 2009 Raymond Hettinger
+-#
+-# Permission is hereby granted, free of charge, to any person
+-# obtaining a copy of this software and associated documentation files
+-# (the "Software"), to deal in the Software without restriction,
+-# including without limitation the rights to use, copy, modify, merge,
+-# publish, distribute, sublicense, and/or sell copies of the Software,
+-# and to permit persons to whom the Software is furnished to do so,
+-# subject to the following conditions:
+-#
+-#     The above copyright notice and this permission notice shall be
+-#     included in all copies or substantial portions of the Software.
+-#
+-#     THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+-#     EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+-#     OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+-#     NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+-#     HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+-#     WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+-#     FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+-#     OTHER DEALINGS IN THE SOFTWARE.
+-
+-from UserDict import DictMixin
+-
+-
+-class OrderedDict(dict, DictMixin):
+-
+-    def __init__(self, *args, **kwds):
+-        if len(args) > 1:
+-            raise TypeError('expected at most 1 arguments, got %d' % len(args))
+-        try:
+-            self.__end
+-        except AttributeError:
+-            self.clear()
+-        self.update(*args, **kwds)
+-
+-    def clear(self):
+-        self.__end = end = []
+-        end += [None, end, end]         # sentinel node for doubly linked list
+-        self.__map = {}                 # key --> [key, prev, next]
+-        dict.clear(self)
+-
+-    def __setitem__(self, key, value):
+-        if key not in self:
+-            end = self.__end
+-            curr = end[1]
+-            curr[2] = end[1] = self.__map[key] = [key, curr, end]
+-        dict.__setitem__(self, key, value)
+-
+-    def __delitem__(self, key):
+-        dict.__delitem__(self, key)
+-        key, prev, next = self.__map.pop(key)
+-        prev[2] = next
+-        next[1] = prev
+-
+-    def __iter__(self):
+-        end = self.__end
+-        curr = end[2]
+-        while curr is not end:
+-            yield curr[0]
+-            curr = curr[2]
+-
+-    def __reversed__(self):
+-        end = self.__end
+-        curr = end[1]
+-        while curr is not end:
+-            yield curr[0]
+-            curr = curr[1]
+-
+-    def popitem(self, last=True):
+-        if not self:
+-            raise KeyError('dictionary is empty')
+-        if last:
+-            key = reversed(self).next()
+-        else:
+-            key = iter(self).next()
+-        value = self.pop(key)
+-        return key, value
+-
+-    def __reduce__(self):
+-        items = [[k, self[k]] for k in self]
+-        tmp = self.__map, self.__end
+-        del self.__map, self.__end
+-        inst_dict = vars(self).copy()
+-        self.__map, self.__end = tmp
+-        if inst_dict:
+-            return (self.__class__, (items,), inst_dict)
+-        return self.__class__, (items,)
+-
+-    def keys(self):
+-        return list(self)
+-
+-    setdefault = DictMixin.setdefault
+-    update = DictMixin.update
+-    pop = DictMixin.pop
+-    values = DictMixin.values
+-    items = DictMixin.items
+-    iterkeys = DictMixin.iterkeys
+-    itervalues = DictMixin.itervalues
+-    iteritems = DictMixin.iteritems
+-
+-    def __repr__(self):
+-        if not self:
+-            return '%s()' % (self.__class__.__name__,)
+-        return '%s(%r)' % (self.__class__.__name__, self.items())
+-
+-    def copy(self):
+-        return self.__class__(self)
+-
+-    @classmethod
+-    def fromkeys(cls, iterable, value=None):
+-        d = cls()
+-        for key in iterable:
+-            d[key] = value
+-        return d
+-
+-    def __eq__(self, other):
+-        if isinstance(other, OrderedDict):
+-            if len(self) != len(other):
+-                return False
+-            for p, q in zip(self.items(), other.items()):
+-                if p != q:
+-                    return False
+-            return True
+-        return dict.__eq__(self, other)
+-
+-    def __ne__(self, other):
+-        return not self == other
+diff --git a/scripts/png_to_cstruct.py b/scripts/png_to_cstruct.py
+index 362ec9fd0..6ac6622d9 100755
+--- a/scripts/png_to_cstruct.py
++++ b/scripts/png_to_cstruct.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ """
+ Convert a PNG image into a C struct
+diff --git a/scripts/qapi.py b/scripts/qapi.py
+index 7c50cc4c8..e4ec60e65 100644
+--- a/scripts/qapi.py
++++ b/scripts/qapi.py
+@@ -12,7 +12,7 @@
+ # See the COPYING file in the top-level directory.
+ 
+ import re
+-from ordereddict import OrderedDict
++from collections import OrderedDict
+ import errno
+ import getopt
+ import os
+@@ -152,7 +152,7 @@ class QAPISchemaParser(object):
+                     continue
+                 try:
+                     fobj = open(incl_abs_fname, 'r')
+-                except IOError, e:
++                except IOError as e:
+                     raise QAPIExprError(expr_info,
+                                         '%s: %s' % (e.strerror, include))
+                 exprs_include = QAPISchemaParser(fobj, previously_included,
+@@ -1148,8 +1148,8 @@ class QAPISchema(object):
+             self._predefining = False
+             self._def_exprs()
+             self.check()
+-        except (QAPISchemaError, QAPIExprError), err:
+-            print >>sys.stderr, err
++        except (QAPISchemaError, QAPIExprError) as err:
++            print(err, file=sys.stderr)
+             exit(1)
+ 
+     def _def_entity(self, ent):
+@@ -1235,7 +1235,7 @@ class QAPISchema(object):
+ 
+     def _make_members(self, data, info):
+         return [self._make_member(key, value, info)
+-                for (key, value) in data.iteritems()]
++                for (key, value) in data.items()]
+ 
+     def _def_struct_type(self, expr, info):
+         name = expr['struct']
+@@ -1269,23 +1269,23 @@ class QAPISchema(object):
+         tag_member = None
+         if tag_name:
+             variants = [self._make_variant(key, value)
+-                        for (key, value) in data.iteritems()]
++                        for (key, value) in data.items()]
+         else:
+             variants = [self._make_simple_variant(key, value, info)
+-                        for (key, value) in data.iteritems()]
++                        for (key, value) in data.items()]
+             tag_member = self._make_implicit_tag(name, info, variants)
+         self._def_entity(
+             QAPISchemaObjectType(name, info, base,
+                                  self._make_members(OrderedDict(), info),
+                                  QAPISchemaObjectTypeVariants(tag_name,
+                                                               tag_member,
+                                                               variants)))
+ 
+     def _def_alternate_type(self, expr, info):
+         name = expr['alternate']
+         data = expr['data']
+         variants = [self._make_variant(key, value)
+-                    for (key, value) in data.iteritems()]
++                    for (key, value) in data.items()]
+         tag_member = self._make_implicit_tag(name, info, variants)
+         self._def_entity(
+             QAPISchemaAlternateType(name, info,
+@@ -1392,7 +1392,7 @@ def c_enum_const(type_name, const_name, prefix=None):
+         type_name = prefix
+     return camel_to_upper(type_name + '_' + const_name)
+ 
+-c_name_trans = string.maketrans('.-', '__')
++c_name_trans = str.maketrans('.-', '__')
+ 
+ 
+ # Map @name to a valid C identifier.
+@@ -1639,41 +1639,40 @@ def parse_command_line(extra_options="", extra_long_options=[]):
+                                        "chp:o:" + extra_options,
+                                        ["source", "header", "prefix=",
+                                         "output-dir="] + extra_long_options)
+-    except getopt.GetoptError, err:
+-        print >>sys.stderr, "%s: %s" % (sys.argv[0], str(err))
++    except getopt.GetoptError as err:
++        print("%s: %s" % (sys.argv[0], str(err)), file=sys.stderr)
+         sys.exit(1)
+ 
+     output_dir = ""
+     prefix = ""
+     do_c = False
+     do_h = False
+     extra_opts = []
+ 
+     for oa in opts:
+         o, a = oa
+         if o in ("-p", "--prefix"):
+             match = re.match('([A-Za-z_.-][A-Za-z0-9_.-]*)?', a)
+             if match.end() != len(a):
+-                print >>sys.stderr, \
+-                    "%s: 'funny character '%s' in argument of --prefix" \
+-                    % (sys.argv[0], a[match.end()])
++                print("%s: 'funny character '%s' in argument of --prefix" \
++                      % (sys.argv[0], a[match.end()]), file=sys.stderr)
+                 sys.exit(1)
+             prefix = a
+         elif o in ("-o", "--output-dir"):
+             output_dir = a + "/"
+         elif o in ("-c", "--source"):
+             do_c = True
+         elif o in ("-h", "--header"):
+             do_h = True
+         else:
+             extra_opts.append(oa)
+ 
+     if not do_c and not do_h:
+         do_c = True
+         do_h = True
+ 
+     if len(args) != 1:
+-        print >>sys.stderr, "%s: need exactly one argument" % sys.argv[0]
++        print("%s: need exactly one argument" % sys.argv[0], file=sys.stderr)
+         sys.exit(1)
+     fname = args[0]
+ 
+@@ -1693,16 +1692,16 @@ def open_output(output_dir, do_c, do_h, prefix, c_file, h_file,
+     if output_dir:
+         try:
+             os.makedirs(output_dir)
+-        except os.error, e:
++        except os.error as e:
+             if e.errno != errno.EEXIST:
+                 raise
+ 
+     def maybe_open(really, name, opt):
+         if really:
+             return open(name, opt)
+         else:
+-            import StringIO
+-            return StringIO.StringIO()
++            import io
++            return io.StringIO()
+ 
+     fdef = maybe_open(do_c, c_file, 'w')
+     fdecl = maybe_open(do_h, h_file, 'w')
+diff --git a/scripts/qemu-gdb.py b/scripts/qemu-gdb.py
+index b3f8e04f7..5865d4d71 100644
+--- a/scripts/qemu-gdb.py
++++ b/scripts/qemu-gdb.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python3
+ 
+ # GDB debugging support
+ #
+diff --git a/scripts/qemugdb/__init__.py b/scripts/qemugdb/__init__.py
+index 969f552b2..31829176e 100644
+--- a/scripts/qemugdb/__init__.py
++++ b/scripts/qemugdb/__init__.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python3
+ 
+ # GDB debugging support
+ #
+diff --git a/scripts/qemugdb/aio.py b/scripts/qemugdb/aio.py
+index 2ba00c444..891cca6d8 100644
+--- a/scripts/qemugdb/aio.py
++++ b/scripts/qemugdb/aio.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python3
+ 
+ # GDB debugging support: aio/iohandler debug
+ #
+diff --git a/scripts/qemugdb/coroutine.py b/scripts/qemugdb/coroutine.py
+index ab699794a..6f69ba333 100644
+--- a/scripts/qemugdb/coroutine.py
++++ b/scripts/qemugdb/coroutine.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python3
+ 
+ # GDB debugging support
+ #
+diff --git a/scripts/qemugdb/mtree.py b/scripts/qemugdb/mtree.py
+index 06011c30c..bf986fab2 100644
+--- a/scripts/qemugdb/mtree.py
++++ b/scripts/qemugdb/mtree.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python3
+ 
+ # GDB debugging support
+ #
+diff --git a/scripts/qmp/qmp.py b/scripts/qmp/qmp.py
+index 1d38e3e9e..779332f32 100644
+--- a/scripts/qmp/qmp.py
++++ b/scripts/qmp/qmp.py
+@@ -92,7 +92,7 @@ class QEMUMonitorProtocol:
+         self.__sock.setblocking(0)
+         try:
+             self.__json_read()
+-        except socket.error, err:
++        except socket.error as err:
+             if err[0] == errno.EAGAIN:
+                 # No data available
+                 pass
+@@ -150,7 +150,7 @@ class QEMUMonitorProtocol:
+         """
+         try:
+             self.__sock.sendall(json.dumps(qmp_cmd))
+-        except socket.error, err:
++        except socket.error as err:
+             if err[0] == errno.EPIPE:
+                 return
+             raise socket.error(err)
+diff --git a/scripts/simpletrace.py b/scripts/simpletrace.py
+index 3916c6d14..f09173e84 100755
+--- a/scripts/simpletrace.py
++++ b/scripts/simpletrace.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ #
+ # Pretty-printer for simple trace backend binary trace files
+ #
+diff --git a/scripts/tracetool.py b/scripts/tracetool.py
+index 83bde7bda..4e1452ae2 100755
+--- a/scripts/tracetool.py
++++ b/scripts/tracetool.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+@@ -71,7 +71,7 @@ def main(args):
+ 
+     try:
+         opts, args = getopt.getopt(args[1:], "", long_opts)
+-    except getopt.GetoptError, err:
++    except getopt.GetoptError as err:
+         error_opt(str(err))
+ 
+     check_backends = False
+@@ -132,7 +132,7 @@ def main(args):
+     try:
+         tracetool.generate(sys.stdin, arg_format, arg_backends,
+                            binary=binary, probe_prefix=probe_prefix)
+-    except tracetool.TracetoolError, e:
++    except tracetool.TracetoolError as e:
+         error_opt(str(e))
+ 
+ if __name__ == "__main__":
+diff --git a/scripts/tracetool/__init__.py b/scripts/tracetool/__init__.py
+index 181675f00..784c3379b 100644
+--- a/scripts/tracetool/__init__.py
++++ b/scripts/tracetool/__init__.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/backend/__init__.py b/scripts/tracetool/backend/__init__.py
+index d4b6dab9c..efaf10362 100644
+--- a/scripts/tracetool/backend/__init__.py
++++ b/scripts/tracetool/backend/__init__.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/backend/dtrace.py b/scripts/tracetool/backend/dtrace.py
+index fabfe9988..9971f7cf1 100644
+--- a/scripts/tracetool/backend/dtrace.py
++++ b/scripts/tracetool/backend/dtrace.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/backend/ftrace.py b/scripts/tracetool/backend/ftrace.py
+index d798c7134..7dc147910 100644
+--- a/scripts/tracetool/backend/ftrace.py
++++ b/scripts/tracetool/backend/ftrace.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/backend/simple.py b/scripts/tracetool/backend/simple.py
+index e8c2cd57e..73f17faa1 100644
+--- a/scripts/tracetool/backend/simple.py
++++ b/scripts/tracetool/backend/simple.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/backend/stderr.py b/scripts/tracetool/backend/stderr.py
+index ca5805462..40bace5e9 100644
+--- a/scripts/tracetool/backend/stderr.py
++++ b/scripts/tracetool/backend/stderr.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/backend/ust.py b/scripts/tracetool/backend/ust.py
+index 2f8f44abd..890d34639 100644
+--- a/scripts/tracetool/backend/ust.py
++++ b/scripts/tracetool/backend/ust.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/__init__.py b/scripts/tracetool/format/__init__.py
+index 812570ff6..8192d4a57 100644
+--- a/scripts/tracetool/format/__init__.py
++++ b/scripts/tracetool/format/__init__.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/c.py b/scripts/tracetool/format/c.py
+index 699598fb0..1a22b3a0f 100644
+--- a/scripts/tracetool/format/c.py
++++ b/scripts/tracetool/format/c.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/d.py b/scripts/tracetool/format/d.py
+index c77d5b7ab..a370dda4a 100644
+--- a/scripts/tracetool/format/d.py
++++ b/scripts/tracetool/format/d.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/events_c.py b/scripts/tracetool/format/events_c.py
+index 2d97fa310..d95de1977 100644
+--- a/scripts/tracetool/format/events_c.py
++++ b/scripts/tracetool/format/events_c.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/events_h.py b/scripts/tracetool/format/events_h.py
+index 9f114a349..9ccdbba28 100644
+--- a/scripts/tracetool/format/events_h.py
++++ b/scripts/tracetool/format/events_h.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/h.py b/scripts/tracetool/format/h.py
+index 9b3943002..e4c55d325 100644
+--- a/scripts/tracetool/format/h.py
++++ b/scripts/tracetool/format/h.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/simpletrace_stap.py b/scripts/tracetool/format/simpletrace_stap.py
+index 7e44bc181..6b7e05d93 100644
+--- a/scripts/tracetool/format/simpletrace_stap.py
++++ b/scripts/tracetool/format/simpletrace_stap.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/stap.py b/scripts/tracetool/format/stap.py
+index 9e780f1b0..215bfd2e1 100644
+--- a/scripts/tracetool/format/stap.py
++++ b/scripts/tracetool/format/stap.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/tcg_h.py b/scripts/tracetool/format/tcg_h.py
+index f676b6662..621f17a91 100644
+--- a/scripts/tracetool/format/tcg_h.py
++++ b/scripts/tracetool/format/tcg_h.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/tcg_helper_c.py b/scripts/tracetool/format/tcg_helper_c.py
+index 96655a059..c0b9e3b86 100644
+--- a/scripts/tracetool/format/tcg_helper_c.py
++++ b/scripts/tracetool/format/tcg_helper_c.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/tcg_helper_h.py b/scripts/tracetool/format/tcg_helper_h.py
+index a8ba7ba8e..a207446ef 100644
+--- a/scripts/tracetool/format/tcg_helper_h.py
++++ b/scripts/tracetool/format/tcg_helper_h.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/tcg_helper_wrapper_h.py b/scripts/tracetool/format/tcg_helper_wrapper_h.py
+index cac5a878f..297bd03ac 100644
+--- a/scripts/tracetool/format/tcg_helper_wrapper_h.py
++++ b/scripts/tracetool/format/tcg_helper_wrapper_h.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/ust_events_c.py b/scripts/tracetool/format/ust_events_c.py
+index bc970936b..270820fd5 100644
+--- a/scripts/tracetool/format/ust_events_c.py
++++ b/scripts/tracetool/format/ust_events_c.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/format/ust_events_h.py b/scripts/tracetool/format/ust_events_h.py
+index 3e8a7cdf1..54257d982 100644
+--- a/scripts/tracetool/format/ust_events_h.py
++++ b/scripts/tracetool/format/ust_events_h.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/tracetool/transform.py b/scripts/tracetool/transform.py
+index fc5e679ed..b3f6706cb 100644
+--- a/scripts/tracetool/transform.py
++++ b/scripts/tracetool/transform.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # -*- coding: utf-8 -*-
+ 
+ """
+diff --git a/scripts/vmstate-static-checker.py b/scripts/vmstate-static-checker.py
+index b6c0bbead..e7d0b6f69 100755
+--- a/scripts/vmstate-static-checker.py
++++ b/scripts/vmstate-static-checker.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/python
++#!/usr/bin/env python3
+ #
+ # Compares vmstate information stored in JSON format, obtained from
+ # the -dump-vmstate QEMU command.
+diff --git a/tests/Makefile b/tests/Makefile
+index 2e15eca3c..f29ef2018 100644
+--- a/tests/Makefile
++++ b/tests/Makefile
+@@ -1,6 +1,6 @@
+ export SRC_PATH
+ 
+-qapi-py = $(SRC_PATH)/scripts/qapi.py $(SRC_PATH)/scripts/ordereddict.py
++qapi-py = $(SRC_PATH)/scripts/qapi.py
+ 
+ # Get the list of all supported sysemu targets
+ SYSEMU_TARGET_LIST := $(subst -softmmu.mak,,$(notdir \
+diff --git a/tests/image-fuzzer/runner.py b/tests/image-fuzzer/runner.py
+index be7e283dd..7ccc3e156 100755
+--- a/tests/image-fuzzer/runner.py
++++ b/tests/image-fuzzer/runner.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ # Tool for running fuzz tests
+ #
+@@ -27,18 +27,20 @@ import shutil
+ from itertools import count
+ import time
+ import getopt
+-import StringIO
++import io
+ import resource
+ 
+ try:
+     import json
+ except ImportError:
+     try:
+         import simplejson as json
+     except ImportError:
+-        print >>sys.stderr, \
++        print(
+             "Warning: Module for JSON processing is not found.\n" \
+-            "'--config' and '--command' options are not supported."
++            "'--config' and '--command' options are not supported.",
++            file=sys.stderr
++        )
+ 
+ # Backing file sizes in MB
+ MAX_BACKING_FILE_SIZE = 10
+@@ -157,10 +159,11 @@ class TestEnv(object):
+ 
+         try:
+             os.makedirs(self.current_dir)
+-        except OSError, e:
+-            print >>sys.stderr, \
++        except OSError as e:
++            print(
+                 "Error: The working directory '%s' cannot be used. Reason: %s"\
+-                % (self.work_dir, e[1])
++                % (self.work_dir, e[1]),
++                file=sys.stderr)
+             raise TestException
+         self.log = open(os.path.join(self.current_dir, "test.log"), "w")
+         self.parent_log = open(run_log, "a")
+@@ -184,7 +187,7 @@ class TestEnv(object):
+                                            MAX_BACKING_FILE_SIZE) * (1 << 20)
+         cmd = self.qemu_img + ['create', '-f', backing_file_fmt,
+                                backing_file_name, str(backing_file_size)]
+-        temp_log = StringIO.StringIO()
++        temp_log = io.StringIO()
+         retcode = run_app(temp_log, cmd)
+         if retcode == 0:
+             temp_log.close()
+@@ -241,10 +244,10 @@ class TestEnv(object):
+                            "Backing file: %s\n" \
+                            % (self.seed, " ".join(current_cmd),
+                               self.current_dir, backing_file_name)
+-            temp_log = StringIO.StringIO()
++            temp_log = io.StringIO()
+             try:
+                 retcode = run_app(temp_log, current_cmd)
+-            except OSError, e:
++            except OSError as e:
+                 multilog("%sError: Start of '%s' failed. Reason: %s\n\n"
+                          % (test_summary, os.path.basename(current_cmd[0]),
+                             e[1]),
+@@ -356,68 +359,73 @@ if __name__ == '__main__':
+         opts, args = getopt.gnu_getopt(sys.argv[1:], 'c:hs:kvd:',
+                                        ['command=', 'help', 'seed=', 'config=',
+                                         'keep_passed', 'verbose', 'duration='])
+-    except getopt.error, e:
+-        print >>sys.stderr, \
+-            "Error: %s\n\nTry 'runner.py --help' for more information" % e
++    except getopt.error as e:
++        print(
++            "Error: %s\n\nTry 'runner.py --help' for more information" % e,
++            file=sys.stderr)
+         sys.exit(1)
+ 
+     command = None
+     cleanup = True
+     log_all = False
+     seed = None
+     config = None
+     duration = None
+     for opt, arg in opts:
+         if opt in ('-h', '--help'):
+             usage()
+             sys.exit()
+         elif opt in ('-c', '--command'):
+             try:
+                 command = json.loads(arg)
+-            except (TypeError, ValueError, NameError), e:
+-                print >>sys.stderr, \
++            except (TypeError, ValueError, NameError) as e:
++                print(
+                     "Error: JSON array of test commands cannot be loaded.\n" \
+-                    "Reason: %s" % e
++                    "Reason: %s" % e,
++                    file=sys.stderr)
+                 sys.exit(1)
+         elif opt in ('-k', '--keep_passed'):
+             cleanup = False
+         elif opt in ('-v', '--verbose'):
+             log_all = True
+         elif opt in ('-s', '--seed'):
+             seed = arg
+         elif opt in ('-d', '--duration'):
+             duration = int(arg)
+         elif opt == '--config':
+             try:
+                 config = json.loads(arg)
+-            except (TypeError, ValueError, NameError), e:
+-                print >>sys.stderr, \
++            except (TypeError, ValueError, NameError) as e:
++                print(
+                     "Error: JSON array with the fuzzer configuration cannot" \
+-                    " be loaded\nReason: %s" % e
++                    " be loaded\nReason: %s" % e,
++                    file=sys.stderr)
+                 sys.exit(1)
+ 
+     if not len(args) == 2:
+-        print >>sys.stderr, \
++        print(
+             "Expected two parameters\nTry 'runner.py --help'" \
+-            " for more information."
++            " for more information.",
++            file=sys.stderr)
+         sys.exit(1)
+ 
+     work_dir = os.path.realpath(args[0])
+     # run_log is created in 'main', because multiple tests are expected to
+     # log in it
+     run_log = os.path.join(work_dir, 'run.log')
+ 
+     # Add the path to the image generator module to sys.path
+     sys.path.append(os.path.realpath(os.path.dirname(args[1])))
+     # Remove a script extension from image generator module if any
+     generator_name = os.path.splitext(os.path.basename(args[1]))[0]
+ 
+     try:
+         image_generator = __import__(generator_name)
+-    except ImportError, e:
+-        print >>sys.stderr, \
++    except ImportError as e:
++        print(
+             "Error: The image generator '%s' cannot be imported.\n" \
+-            "Reason: %s" % (generator_name, e)
++            "Reason: %s" % (generator_name, e),
++            file=sys.stderr)
+         sys.exit(1)
+ 
+     # Enable core dumps
+diff --git a/tests/qemu-iotests/iotests.py b/tests/qemu-iotests/iotests.py
+index e02245ed0..b0bc2a31f 100644
+--- a/tests/qemu-iotests/iotests.py
++++ b/tests/qemu-iotests/iotests.py
+@@ -235,7 +235,7 @@ class VM(object):
+             os.remove(self._qemu_log_path)
+             self._popen = None
+ 
+-    underscore_to_dash = string.maketrans('_', '-')
++    underscore_to_dash = str.maketrans('_', '-')
+     def qmp(self, cmd, conv_keys=True, **args):
+         '''Invoke a QMP command and return the result dict'''
+         qmp_args = dict()
+@@ -404,13 +404,13 @@ def main(supported_fmts=[], supported_oses=['linux']):
+ 
+     # We need to filter out the time taken from the output so that qemu-iotest
+     # can reliably diff the results against master output.
+-    import StringIO
++    import io
+     if debug:
+         output = sys.stdout
+         verbosity = 2
+         sys.argv.remove('-d')
+     else:
+-        output = StringIO.StringIO()
++        output = io.StringIO()
+ 
+     class MyTestRunner(unittest.TextTestRunner):
+         def __init__(self, stream=output, descriptions=True, verbosity=verbosity):
+diff --git a/tests/qemu-iotests/nbd-fault-injector.py b/tests/qemu-iotests/nbd-fault-injector.py
+index 6c07191a5..8078f589c 100755
+--- a/tests/qemu-iotests/nbd-fault-injector.py
++++ b/tests/qemu-iotests/nbd-fault-injector.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ # NBD server - fault injection utility
+ #
+ # Configuration file syntax:
+diff --git a/tests/qemu-iotests/qcow2.py b/tests/qemu-iotests/qcow2.py
+index 9cc4cf7d0..62fb6d38f 100755
+--- a/tests/qemu-iotests/qcow2.py
++++ b/tests/qemu-iotests/qcow2.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ 
+ import sys
+ import struct
+diff --git a/tests/qemu-iotests/qed.py b/tests/qemu-iotests/qed.py
+index 52ff84559..65ca86c07 100755
+--- a/tests/qemu-iotests/qed.py
++++ b/tests/qemu-iotests/qed.py
+@@ -1,4 +1,4 @@
+-#!/usr/bin/env python
++#!/usr/bin/env python3
+ #
+ # Tool to manipulate QED image files
+ #
+@@ -227,7 +227,7 @@ def main():
+     qed = QED(open(filename, 'r+b'))
+     try:
+         globals()[cmd](qed, *sys.argv[3:])
+-    except TypeError, e:
++    except TypeError as e:
+         sys.stderr.write(globals()[cmd].__doc__ + '\n')
+         sys.exit(1)
+ 
+-- 
+2.53.0
+
